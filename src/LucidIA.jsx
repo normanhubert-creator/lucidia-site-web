@@ -1852,9 +1852,10 @@ const CSS = `
   .l-vu .l-ville circle.pt { animation: none; }
 }
 /* ── matrice ── */
-.l-mx-wrap { display: grid; grid-template-columns: 22px minmax(0,1fr); gap: 12px; align-items: stretch; }
+.l-mx-figure { width: 100%; min-width: 0; }
+.l-mx-wrap { display: grid; grid-template-columns: 22px minmax(0,1fr); gap: 12px; align-items: stretch; width: 100%; min-width: 0; }
 .l-mx-yax { writing-mode: vertical-rl; transform: rotate(180deg); text-align: center; }
-.l-matrice { position: relative; aspect-ratio: 1.2/1; border-left: 1px solid rgba(255,255,255,.3); border-bottom: 1px solid rgba(255,255,255,.3); background: linear-gradient(135deg, rgba(63,88,255,.16), rgba(5,7,15,0) 62%); }
+.l-matrice { position: relative; width: 100%; min-width: 0; aspect-ratio: 1.2/1; border-left: 1px solid rgba(255,255,255,.3); border-bottom: 1px solid rgba(255,255,255,.3); background: linear-gradient(135deg, rgba(63,88,255,.16), rgba(5,7,15,0) 62%); }
 .l-mx-pt { position: absolute; }
 .l-mx-dot { position: absolute; left: -4px; top: -4px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 12px rgba(147,165,255,.7); }
 .l-mx-lab { position: absolute; font-size: .78rem; line-height: 1.22; width: 122px; color: var(--gris-1); }
@@ -3866,7 +3867,7 @@ function PageAccompagnement({ go }) {
             texte="Chaque cas d’usage est positionné sur ces deux axes avant toute décision. Les exemples ci-dessous sont des illustrations génériques : ils ne proviennent d’aucun client et leur position varie fortement selon l’entreprise."
           />
           <div className="l-grid l-g2" style={{ gap: 56, alignItems: "stretch" }}>
-            <figure>
+            <figure className="l-mx-figure">
               <div className="l-mx-wrap">
                 <p className="l-mx-ax l-mx-yax">Impact potentiel</p>
                 <div className="l-matrice">
