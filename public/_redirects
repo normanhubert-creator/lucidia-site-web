@@ -1,0 +1,4 @@
+# Toutes les adresses renvoient index.html : c'est ce qui permet à
+# /formations/prompting-professionnel de fonctionner en accès direct.
+# Fichier lu par Netlify et par Cloudflare Pages.
+/*    /index.html   200
