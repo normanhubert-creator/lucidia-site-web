@@ -8,3 +8,7 @@ dist/
 .vite/
 npm-debug.log*
 source-archive/
+.netlify/
+
+# Local Netlify folder
+.netlify
