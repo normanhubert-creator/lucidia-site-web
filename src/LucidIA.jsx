@@ -13,9 +13,12 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 
 /* ─────────── 1. INFORMATIONS À FOURNIR ───────────
    Remplacer chaque valeur "À COMPLÉTER". Tout le site lit ces variables. */
-/* Adresse définitive du site : elle sert aux URL canoniques et aux données
-   structurées. À corriger si le domaine retenu diffère. */
-const DOMAINE = "https://lucidia.fr";
+/* Adresse publique du site : elle sert aux URL canoniques, aux données
+   structurées et aux métadonnées de partage. C'est l'UNIQUE endroit où elle
+   est écrite — scripts/prerender.mjs la lit ici même, pour qu'elles ne
+   puissent pas diverger. Le jour où un nom de domaine propre sera acquis,
+   cette ligne et public/sitemap.xml suffiront. */
+const DOMAINE = "https://lucidia-ia.netlify.app";
 
 /* "chemins" : de vraies URL (/formations/prompting-professionnel), indexables
    une par une. Exige la règle de réécriture fournie dans public/_redirects.
@@ -32,12 +35,15 @@ const SITE = {
   adresse: "", // À COMPLÉTER — adresse de facturation et siège social
   calendly: "https://calendar.app.google/MBv1V4YRUqQBgboHA",
   /* Portraits servis depuis public/img/ : remplacer les fichiers suffit,
-     sans toucher au code. */
+     sans toucher au code. Deux tailles par personne, toutes deux en WebP :
+     la grande pour les pages, la petite pour les vignettes et les pastilles. */
   linkedinArthur: "https://www.linkedin.com/in/arthur-peniguel",
   linkedinNorman: "https://www.linkedin.com/in/norman-hubert/",
   linkedinCabinet: "", // À COMPLÉTER
-  photoArthur: "/img/arthur.jpg",
-  photoNorman: "/img/norman.jpg",
+  photoArthur: "/img/arthur-800.webp",
+  photoArthurPetite: "/img/arthur-320.webp",
+  photoNorman: "/img/norman-800.webp",
+  photoNormanPetite: "/img/norman-320.webp",
   siret: "", // À COMPLÉTER
   numeroDeclarationActivite: "", // À COMPLÉTER — déclaration d’activité de formation
   hebergeur: "", // À COMPLÉTER — nom et adresse de l’hébergeur
@@ -858,11 +864,11 @@ const PUBLICS_HOME = [
     lienLabel: "Voir les formations métiers",
   },
   {
-    titre: "Équipes de transformation",
+    titre: "Dirigeants, DAF et DRH",
     texte:
-      "Identifier, cadrer et déployer les cas d’usage qui créent réellement de la valeur.",
-    lien: { page: "accompagnement" },
-    lienLabel: "Voir l’accompagnement",
+      "Savoir ce qui se pratique déjà chez vous, trancher entre les usages possibles et engager les bons chantiers — sans passer par une formation si ce n’est pas votre besoin.",
+    lien: { page: "conseil" },
+    lienLabel: "Voir le conseil et les projets",
   },
 ];
 
@@ -930,6 +936,49 @@ const ACCOMPAGNEMENT = [
       "Plan de montée en compétences",
       "Mesure des résultats et arbitrages de suite",
     ],
+  },
+];
+
+/* Situations d'entrée de la page Conseil & projets. Elles ouvrent la page
+   à la place de notre méthode : un dirigeant doit se reconnaître avant
+   d'entendre parler de la façon dont nous travaillons.
+   cible : identifiant de la prestation qui répond à la situation. */
+const PROBLEMES = [
+  {
+    titre: "Vos équipes utilisent déjà l’IA, sans que vous sachiez quoi ni comment",
+    texte:
+      "Abonnements personnels, outils grand public, usages discrets. Le sujet n’est pas d’interdire, mais de rendre ces usages visibles avant qu’ils ne posent un problème.",
+    cible: "diagnostic",
+  },
+  {
+    titre: "Un projet a été lancé sur une promesse, puis abandonné six mois plus tard",
+    texte:
+      "L’outil fonctionnait, l’usage n’a jamais pris. Ce qui manquait n’était pas la technologie, mais le travail d’adoption et de mesure.",
+    cible: "deploiement",
+  },
+  {
+    titre: "Les idées d’usages affluent, sans critère pour trancher",
+    texte:
+      "Chaque direction a sa liste. Personne ne sait laquelle engager en premier, ni laquelle écarter sans regret.",
+    cible: "priorisation",
+  },
+  {
+    titre: "Un outil a été acheté, et presque personne ne s’en sert",
+    texte:
+      "Les licences courent. Le retour sur investissement se joue désormais sur les pratiques, pas sur le contrat.",
+    cible: "deploiement",
+  },
+  {
+    titre: "Vous devez arbitrer un budget IA sans base sérieuse",
+    texte:
+      "Les promesses de gains circulent, rarement les conditions qui les rendraient vraies. Un chiffre sans méthode ne vaut pas un arbitrage.",
+    cible: "audit",
+  },
+  {
+    titre: "Vos données sont sensibles et personne n’a fixé de règles",
+    texte:
+      "Documents clients, pièces RH, contrats. Le risque tient moins à l’outil qu’à ce qu’on lui confie, et à ce qu’on fait de ses réponses.",
+    cible: "diagnostic",
   },
 ];
 
@@ -1054,6 +1103,14 @@ const VALEURS = [
   { titre: "Résultats concrets plutôt qu’effets de mode", texte: "Nous écartons volontiers un usage qui n’apporte rien." },
 ];
 
+/* Les six fiches ci-dessous sont des emplacements éditoriaux : les textes ne
+   sont pas écrits. Tant que ce drapeau vaut false, la page Ressources ne les
+   affiche pas — annoncer six articles inexistants dessert le propos. Passer à
+   true le jour où les contenus existent. Même logique pour la lettre de veille,
+   dont aucun service d'envoi n'est connecté. */
+const ARTICLES_PUBLIES = false;
+const VEILLE_OUVERTE = false;
+
 const ARTICLES = [
   {
     titre: "Quelle formation IA choisir pour son entreprise ?",
@@ -1086,6 +1143,145 @@ const ARTICLES = [
     theme: "Trajectoire",
   },
 ];
+
+/* ─────────── LA MINI-REVUE « À DEUX VOIX » ───────────
+   Un objet par numéro. Pour publier le suivant : ajouter une entrée en tête
+   de liste, déposer la couverture dans public/revue/ et le PDF à côté.
+   Rien d'autre à modifier : la rubrique, la page du numéro, le routage et
+   les liens se construisent à partir de ces données.
+
+   publie : false → le numéro s'affiche en « à paraître », sans page ni PDF. */
+
+const REVUE = {
+  nom: "À deux voix",
+  descripteur: "La mini-revue LucidIA",
+  positionnement:
+    "Deux parcours. Deux regards. Une même volonté : rendre l’intelligence artificielle compréhensible et utile dans le travail réel.",
+  promesse: "Comprendre. Croiser. Agir.",
+};
+
+/* Numéro mis en avant : le plus récent effectivement paru. */
+const NUMEROS = [
+  {
+    id: "ia-de-l-ombre",
+    publie: true,
+    numero: "N° 01",
+    rang: "01",
+    date: "Septembre 2026",
+    titre: "L’IA de l’ombre",
+    accroche:
+      "Vos collaborateurs utilisent peut-être déjà l’IA. Le vrai problème est que vous ne le savez pas.",
+    resume:
+      "Outils grand public, abonnements personnels, usages discrets : l’IA entre dans les entreprises par la porte de derrière. Décryptage d’un phénomène déjà massif, et de ce qu’il change pour l’organisation, la sécurité et la confiance.",
+    lecture: "8 minutes",
+    pages: 6,
+    couverture: "/revue/a-deux-voix-n01-couverture-960.webp",
+    couverturePetite: "/revue/a-deux-voix-n01-couverture-480.webp",
+    couvertureAlt:
+      "Couverture du numéro 01 de la mini-revue LucidIA « À deux voix » : L’IA de l’ombre",
+    pdf: "/revue/LucidIA-A-deux-voix-N01-IA-de-l-ombre.pdf",
+    pdfNom: "LucidIA-A-deux-voix-N01-IA-de-l-ombre.pdf",
+    pdfPoids: "750 Ko",
+    chiffres: [
+      {
+        valeur: "78 %",
+        texte: "des utilisateurs d’IA au travail apportent leurs propres outils.",
+        source: "Microsoft & LinkedIn, Work Trend Index, 2024",
+      },
+      {
+        valeur: "57 %",
+        texte: "des salariés disent cacher leur usage de l’IA à leur employeur.",
+        source: "KPMG & Université de Melbourne, 2025",
+      },
+      {
+        valeur: "1 sur 5",
+        texte:
+          "des organisations victimes d’une fuite de données l’attribuent à l’IA de l’ombre.",
+        source: "IBM & Ponemon, Cost of a Data Breach, 2025",
+      },
+      {
+        valeur: "15 %",
+        texte:
+          "seulement des utilisateurs professionnels français déclarent avoir été formés.",
+        source: "Ifop pour Talan, 2025",
+      },
+    ],
+    rubriques: [
+      {
+        page: "2",
+        titre: "Édito et deux regards croisés",
+        texte:
+          "Pourquoi ce sujet arrive en premier, et ce que chacun de nous en retient : l’ombre comme symptôme, l’ombre comme risque.",
+      },
+      {
+        page: "3",
+        titre: "Les grands cabinets, en français courant",
+        texte:
+          "Cinq études majeures ramenées à ce qu’elles changent concrètement pour une PME, colonne par colonne.",
+      },
+      {
+        page: "4",
+        titre: "Passer de l’usage caché à un cadre utile",
+        texte:
+          "Voir, classer, équiper : une grille verte, orange, rouge à adapter à vos métiers, et trois réflexes à éviter.",
+      },
+      {
+        page: "5",
+        titre: "Ce que nous ferions lundi matin",
+        texte:
+          "Cinq actions sans grand projet, et un diagnostic express en six questions à se poser avant d’écrire une charte.",
+      },
+      {
+        page: "6",
+        titre: "Et maintenant, on en fait quoi ?",
+        texte:
+          "La méthode en quatre temps, trois portes d’entrée selon votre besoin, et les sources complètes du numéro.",
+      },
+    ],
+    regards: [
+      {
+        auteur: "Norman Hubert",
+        angle: "Stratégie, organisation et transformation",
+        titre: "L’ombre, symptôme d’un besoin réel",
+        texte:
+          "L’IA de l’ombre n’est pas d’abord une dérive, c’est un signal. Si tant de collaborateurs utilisent des outils non officiels, c’est qu’ils y trouvent une réponse concrète à un problème réel. L’écart se creuse entre la vitesse des besoins et celle des processus internes.",
+        citation: "Comprendre avant d’interdire.",
+        photo: SITE.photoNormanPetite,
+      },
+      {
+        auteur: "Arthur Péniguel",
+        angle: "IA, données et usages métiers",
+        titre: "Un enjeu de maîtrise et de responsabilité",
+        texte:
+          "Écouter le terrain, oui, mais sans ignorer les risques : un contrat collé dans un outil grand public, une synthèse non relue envoyée à un client. Notre rôle est de créer un cadre clair et attractif, pas de freiner l’élan.",
+        citation: "Canaliser pour aller plus loin.",
+        photo: SITE.photoArthurPetite,
+      },
+    ],
+    sources: [
+      "Microsoft & LinkedIn, 2024 Work Trend Index, mai 2024 (31 000 actifs, 31 pays).",
+      "McKinsey, Superagency in the workplace, janvier 2025 (3 002 salariés, 118 dirigeants, États-Unis).",
+      "BCG, AI at Work 2025: Momentum Builds, But Gaps Remain, juin 2025 (10 600 salariés, 11 pays).",
+      "KPMG & Université de Melbourne, Trust, attitudes and use of AI, avril 2025 (48 000 personnes, 47 pays).",
+      "IBM & Ponemon Institute, Cost of a Data Breach Report 2025, juillet 2025 (600 organisations).",
+      "Ifop pour Talan, Les Français et les IA génératives, baromètre vague 3, 2025.",
+    ],
+  },
+  {
+    id: "deleguer-agent-ia",
+    publie: false,
+    numero: "N° 02",
+    rang: "02",
+    date: "À paraître",
+    titre: "Peut-on vraiment déléguer à un agent IA ?",
+    accroche:
+      "Autonomie, contrôle humain, responsabilité : jusqu’où laisser une IA agir sans que la délégation devienne un abandon.",
+    resume:
+      "Le deuxième numéro est en cours d’écriture. Il prolongera la question du cadre : ce qu’on peut confier à un agent, ce qui doit rester sous décision humaine, et comment le vérifier.",
+  },
+];
+
+const REVUE_UNE = NUMEROS.find((n) => n.publie);
 
 const FAQ = [
   {
@@ -1462,6 +1658,7 @@ const MESSAGES = [
     auteur: "Arthur Péniguel",
     role: "Cofondateur",
     photo: () => SITE.photoArthur,
+    photoPetite: () => SITE.photoArthurPetite,
     titre: "Pourquoi former ses équipes à l’IA",
     video: "",
     lignes: [
@@ -1483,6 +1680,7 @@ const MESSAGES = [
     auteur: "Norman Hubert",
     role: "Cofondateur",
     photo: () => SITE.photoNorman,
+    photoPetite: () => SITE.photoNormanPetite,
     titre: "Pourquoi faire confiance à notre process",
     video: "",
     lignes: [
@@ -1503,6 +1701,7 @@ const MESSAGES = [
     auteur: "Arthur Péniguel",
     role: "Cofondateur",
     photo: () => SITE.photoArthur,
+    photoPetite: () => SITE.photoArthurPetite,
     titre: "Pourquoi nous avons créé LucidIA",
     video: "",
     lignes: [
@@ -1522,6 +1721,7 @@ const MESSAGES = [
     auteur: "Norman Hubert",
     role: "Cofondateur",
     photo: () => SITE.photoNorman,
+    photoPetite: () => SITE.photoNormanPetite,
     titre: "Notre ambition pour les entreprises",
     video: "",
     lignes: [
@@ -1538,16 +1738,23 @@ const MESSAGES = [
 ];
 
 const PAGES = [
-  { id: "accueil", label: "Accueil", titre: "LucidIA — Formation IA en entreprise pour TPE, PME et ETI", meta: "LucidIA forme dirigeants et équipes à l’intelligence artificielle et accompagne les TPE, PME et ETI de la compréhension jusqu’au déploiement des usages. Paris et Grand Ouest." },
+  { id: "accueil", label: "Accueil", titre: "LucidIA — Formation IA en entreprise pour TPE, PME et ETI", meta: "LucidIA forme dirigeants et équipes à l’intelligence artificielle et conduit les projets IA des TPE, PME et ETI, du diagnostic jusqu’au déploiement des usages. Paris et Grand Ouest." },
   { id: "formations", label: "Formations", titre: "Catalogue de formations IA en entreprise — LucidIA", meta: "Formations IA pour CODIR, managers, collaborateurs et équipes métiers : fondamentaux, ChatGPT, Claude, Microsoft Copilot, prompting, finance, RH, marketing, usages responsables." },
-  { id: "accompagnement", label: "Accompagnement", titre: "Accompagnement IA en entreprise : diagnostic, audit, cas d’usage — LucidIA", meta: "Diagnostic des pratiques, audit IA PME, identification et priorisation des cas d’usage IA, accompagnement au déploiement pour TPE, PME et ETI." },
-  { id: "methode", label: "Notre méthode", titre: "Notre méthode de formation et d’accompagnement IA — LucidIA", meta: "Écouter, éclairer, expérimenter, ancrer : la méthode LucidIA pour des formations IA en entreprise construites sur vos situations de travail réelles." },
+  { id: "conseil", label: "Conseil & projets", titre: "Conseil et projets IA en entreprise : diagnostic, cas d’usage, déploiement — LucidIA", meta: "Diagnostic des pratiques, audit IA PME, identification et priorisation des cas d’usage IA, accompagnement au déploiement pour TPE, PME et ETI. Chaque mission se mène indépendamment d’une formation." },
   { id: "apropos", label: "À propos", titre: "À propos de LucidIA — la recherche rencontre le terrain", meta: "LucidIA, cabinet de formation et de conseil en intelligence artificielle fondé par Arthur Péniguel et Norman Hubert, chercheurs et consultants." },
   { id: "demonstrations", label: "Démonstrations", titre: "Démonstrations de cas d’usage IA par fonction — LucidIA", meta: "Démonstrations commentées de cas d’usage IA en entreprise : commentaire de gestion, rapprochement de factures, RAG sur base documentaire RH, déclinaison marketing, préparation de rendez-vous commercial." },
+  { id: "a-deux-voix", label: "À deux voix", titre: "À deux voix — la mini-revue LucidIA", meta: "Deux parcours, deux regards sur l’intelligence artificielle au travail. La mini-revue LucidIA, à lire en ligne et à télécharger librement." },
   { id: "ressources", label: "Ressources", titre: "Ressources IA pour les entreprises — LucidIA", meta: "Articles et guides pour choisir une formation IA, former un CODIR, comparer les outils et identifier des cas d’usage IA en PME." },
-  { id: "contact", label: "Contact", titre: "Contact — parler de votre projet IA — LucidIA", meta: "Échanger sur votre projet de formation ou d’accompagnement IA. Interventions à Paris, Rennes, Nantes, Angers, Cholet et La Roche-sur-Yon." },
+  { id: "contact", label: "Contact", titre: "Contact — parler de votre projet IA — LucidIA", meta: "Échanger sur votre projet de formation ou de conseil IA. Interventions à Paris, Rennes, Nantes, Angers, Cholet et La Roche-sur-Yon." },
   { id: "mentions", label: "Mentions légales", titre: "Mentions légales et politique de confidentialité — LucidIA", meta: "Mentions légales et politique de confidentialité du site LucidIA." },
 ];
+
+/* Barre de navigation — volontairement courte. Elle ne se déduit PAS de
+   PAGES : une page peut exister, être partageable et indexable sans occuper
+   une place dans le menu. Démonstrations, Ressources et les mentions légales
+   sont dans ce cas ; on les atteint depuis les pages d’offre et le pied de
+   page. Pour ajouter une entrée au menu, ajouter son identifiant ici. */
+const NAV = ["formations", "conseil", "a-deux-voix", "apropos", "contact"];
 
 /* ─────────── 4. SYSTÈME VISUEL ─────────── */
 const CSS = `
@@ -1676,6 +1883,8 @@ const CSS = `
 .l-menu a, .l-menu button { font-family: "Manrope Variable", Manrope, sans-serif; }
 .l-menu-link { display: block; padding: 18px 0; font-size: 1.6rem; font-weight: 700; letter-spacing: -.03em; color: var(--titre); border-bottom: 1px solid var(--ligne); text-align: left; width: 100%; }
 .l-menu-foot { margin-top: auto; padding-top: 32px; }
+.l-menu-sous { display: block; font-family: "Inter Variable", Inter, sans-serif; font-weight: 400;
+  font-size: .86rem; letter-spacing: 0; color: var(--gris-2); margin-top: 2px; }
 
 /* ── hero ── */
 .l-hero { position: relative; padding: 150px 0 88px; overflow: hidden; }
@@ -1708,6 +1917,7 @@ const CSS = `
 .l-pub:hover { background: var(--carte-2); border-color: rgba(255,255,255,.26); }
 .l-pub h3 { letter-spacing: -.02em; }
 .l-pub > :last-child { margin-top: auto; }
+.l-pub > .l-btn { align-self: flex-start; }
 
 /* ── filtres ── */
 .l-filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 26px 32px; align-items: start; }
@@ -1904,6 +2114,89 @@ const CSS = `
 .l-art:hover { background: var(--carte-2); border-color: rgba(255,255,255,.26); }
 .l-badge { align-self: flex-start; font-family: "Manrope Variable", Manrope, sans-serif; font-weight: 600; font-size: .76rem; padding: 4px 10px; border-radius: 100px; background: var(--surface); color: var(--gris-2); border: 1px solid var(--ligne); }
 .l-note { border-left: 2px solid var(--accent); padding: 4px 0 4px 18px; }
+
+/* ── mini-revue « À deux voix » ── */
+/* La couverture est un objet posé sur le fond sombre : halo derrière,
+   lente remontée au survol. Aucun autre effet, pour ne pas concurrencer
+   la page du numéro. */
+.l-une { position: relative; display: block; width: 100%; max-width: 430px; }
+.l-une::before { content: ""; position: absolute; inset: -14% -18% -22% -18%; pointer-events: none;
+  background: radial-gradient(ellipse at 50% 45%, rgba(63,88,255,.34), rgba(107,75,245,.12) 46%, rgba(5,7,15,0) 72%);
+  opacity: 0; transition: opacity 1.1s ease .15s; }
+.l-vu.l-une::before, .l-vu .l-une::before { opacity: 1; }
+.l-une img { position: relative; width: 100%; height: auto; display: block; border: 1px solid var(--ligne);
+  box-shadow: 0 34px 72px -34px rgba(0,0,0,.92); transition: transform .4s cubic-bezier(.16,.8,.28,1), box-shadow .4s ease; }
+a.l-une:hover img, button.l-une:hover img { transform: translateY(-6px); box-shadow: 0 44px 84px -34px rgba(0,0,0,.95); }
+.l-une-cadre { display: grid; justify-items: center; }
+
+/* Bandeau de tête de la rubrique et du numéro */
+.l-revue-une { display: grid; grid-template-columns: minmax(0,.82fr) minmax(0,1fr); gap: 60px; align-items: center; }
+.l-revue-num { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; font-family: "Manrope Variable", Manrope, sans-serif;
+  font-weight: 600; font-size: .86rem; color: var(--gris-2); }
+.l-revue-num b { font-weight: 700; color: var(--accent); }
+.l-revue-num i { width: 3px; height: 3px; border-radius: 50%; background: var(--gris-2); font-style: normal; }
+.l-revue-accroche { font-family: "Manrope Variable", Manrope, sans-serif; font-weight: 600;
+  font-size: clamp(1.05rem, 1.6vw, 1.32rem); line-height: 1.38; letter-spacing: -.02em; color: #fff;
+  border-left: 2px solid var(--accent); padding-left: 20px; max-width: 30em; }
+
+/* Liste des numéros : une ligne par numéro, vignette à gauche */
+.l-nums { display: grid; gap: 1px; background: var(--ligne); border: 1px solid var(--ligne); }
+.l-num { background: var(--carte); padding: 26px 28px; display: grid; grid-template-columns: 116px minmax(0,1fr) auto;
+  gap: 28px; align-items: center; text-align: left; width: 100%; transition: background-color .2s ease; }
+.l-num:hover { background: var(--carte-2); }
+.l-num img { width: 116px; height: auto; display: block; border: 1px solid var(--ligne); }
+.l-num-vig { width: 116px; aspect-ratio: 1/1.414; border: 1px dashed rgba(255,255,255,.22); display: grid;
+  place-items: center; background: var(--surface); }
+.l-num-vig span { font-family: "Manrope Variable", Manrope, sans-serif; font-weight: 700; font-size: 1.6rem;
+  letter-spacing: -.04em; color: rgba(255,255,255,.28); }
+.l-num-corps { display: grid; gap: 8px; }
+.l-num-t { font-family: "Manrope Variable", Manrope, sans-serif; font-weight: 700; font-size: 1.32rem;
+  line-height: 1.18; letter-spacing: -.028em; color: var(--titre); transition: color .18s ease; }
+.l-num:hover .l-num-t { color: var(--accent); }
+.l-num-fin { display: grid; gap: 10px; justify-items: end; }
+.l-num-a-venir { opacity: .72; }
+.l-num-plus { display: contents; }
+
+/* Chiffres clés du numéro */
+.l-chif { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 1px; background: var(--ligne);
+  border: 1px solid var(--ligne); }
+.l-chif-i { background: var(--carte); padding: 26px 24px; display: grid; gap: 10px; align-content: start; }
+.l-chif-v { font-family: "Manrope Variable", Manrope, sans-serif; font-weight: 700; font-size: clamp(1.9rem, 3vw, 2.4rem);
+  line-height: 1; letter-spacing: -.04em; color: var(--accent); }
+.l-chif-s { font-size: .78rem; color: var(--gris-2); margin-top: auto; padding-top: 4px; }
+
+/* Sommaire du numéro */
+.l-somm { border-top: 1px solid var(--ligne); }
+.l-somm-i { display: grid; grid-template-columns: 2.6rem minmax(0,1fr); gap: 22px; padding: 22px 0;
+  border-bottom: 1px solid var(--ligne); }
+.l-somm-p { font-family: "Manrope Variable", Manrope, sans-serif; font-weight: 700; font-size: .84rem; color: var(--accent); padding-top: .25em; }
+
+/* Les deux regards */
+.l-voix { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 1px; background: var(--ligne);
+  border: 1px solid var(--ligne); }
+.l-voix-i { background: var(--carte); padding: 32px 30px; display: flex; flex-direction: column; gap: 14px; }
+.l-voix-tete { display: grid; grid-template-columns: 56px minmax(0,1fr); gap: 16px; align-items: center; }
+.l-voix-tete img { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; object-position: top center;
+  border: 1px solid var(--ligne); display: block; }
+.l-voix-nom { font-family: "Manrope Variable", Manrope, sans-serif; font-weight: 700; font-size: 1.02rem;
+  letter-spacing: -.015em; color: #fff; }
+.l-voix-cit { margin-top: auto; padding-top: 18px; border-top: 1px solid var(--ligne);
+  font-family: "Manrope Variable", Manrope, sans-serif; font-weight: 700; font-size: 1.06rem;
+  letter-spacing: -.02em; color: var(--accent); }
+
+@media (max-width: 1040px) {
+  .l-chif { grid-template-columns: repeat(2, minmax(0,1fr)); }
+}
+@media (max-width: 860px) {
+  .l-revue-une, .l-voix { grid-template-columns: 1fr !important; }
+  .l-une { max-width: 320px; margin: 0 auto; }
+  .l-chif { grid-template-columns: 1fr; }
+  .l-num { grid-template-columns: 84px minmax(0,1fr); gap: 20px; padding: 22px 20px; align-items: start; }
+  .l-num-plus { display: none; }
+  .l-num img, .l-num-vig { width: 84px; }
+  .l-num-fin { grid-column: 1 / -1; justify-items: start; }
+  .l-somm-i { grid-template-columns: 2rem minmax(0,1fr); gap: 14px; }
+}
 
 /* ── pied de page ── */
 .l-foot { background: #03050C; padding: 72px 0 36px; border-top: 1px solid var(--ligne); }
@@ -2539,7 +2832,8 @@ function Nav({ route, go }) {
     setOpen(false);
   }, [route.page, route.id]);
 
-  const liens = PAGES.filter((p) => p.id !== "mentions" && p.id !== "accueil");
+  /* Une seule source pour les deux menus : ils ne peuvent pas diverger. */
+  const liens = NAV.map((id) => PAGES.find((p) => p.id === id)).filter(Boolean);
 
   return (
     <>
@@ -2559,8 +2853,8 @@ function Nav({ route, go }) {
                 {p.label}
               </button>
             ))}
-            <Btn variant="1" className="l-nav-cta" onClick={() => go("formations")}>
-              Découvrir nos formations
+            <Btn variant="1" className="l-nav-cta" onClick={() => go("contact")}>
+              Échanger sur votre projet
             </Btn>
           </nav>
           <button
@@ -2577,15 +2871,19 @@ function Nav({ route, go }) {
       {open && (
         <div className="l-menu" role="dialog" aria-modal="true" aria-label="Menu">
           <nav aria-label="Navigation mobile">
-            {PAGES.filter((p) => p.id !== "mentions").map((p) => (
+            <button className="l-menu-link" onClick={() => go("accueil")}>
+              Accueil
+            </button>
+            {liens.map((p) => (
               <button key={p.id} className="l-menu-link" onClick={() => go(p.id)}>
                 {p.label}
+                {p.id === "a-deux-voix" && <span className="l-menu-sous">La mini-revue LucidIA</span>}
               </button>
             ))}
           </nav>
           <div className="l-menu-foot">
-            <Btn variant="1" onClick={() => go("formations")}>
-              Découvrir nos formations
+            <Btn variant="1" onClick={() => go("contact")}>
+              Échanger sur votre projet
             </Btn>
             <p className="l-small" style={{ marginTop: 18 }}>
               {SITE.descripteur}
@@ -2623,11 +2921,13 @@ function Footer({ go }) {
           </div>
           <div>
             <h4>Cabinet</h4>
-            <button onClick={() => go("accompagnement")}>Accompagnement IA</button>
+            <button onClick={() => go("conseil")}>Conseil &amp; projets IA</button>
             <button onClick={() => go("demonstrations")}>Démonstrations</button>
-            <button onClick={() => go("methode")}>Notre méthode</button>
             <button onClick={() => go("apropos")}>À propos</button>
             <button onClick={() => go("ressources")}>Ressources</button>
+            <button onClick={() => go("a-deux-voix")}>
+              {REVUE.nom} — la mini-revue
+            </button>
             <button onClick={() => go("contact")}>Contact</button>
           </div>
           <div>
@@ -2859,6 +3159,8 @@ function Fondateurs({ complet }) {
               <img
                 src={g.photo}
                 alt={"Portrait " + (/^[AEIOUYÉÈ]/.test(g.nom) ? "d’" : "de ") + g.nom}
+                width="800"
+                height="1000"
                 loading="lazy"
               />
             ) : (
@@ -3141,15 +3443,16 @@ function PageAccueil({ go }) {
               L’intelligence artificielle devient utile lorsqu’elle devient claire.
             </h1>
             <p className="l-lede">
-              LucidIA forme vos dirigeants et vos équipes, révèle les usages à forte valeur et
-              vous accompagne jusqu’au déploiement de solutions adaptées à vos métiers.
+              Deux façons de travailler avec nous, indépendantes l’une de l’autre : nous formons
+              vos dirigeants et vos équipes, et nous conduisons vos projets IA du diagnostic
+              jusqu’au déploiement.
             </p>
             <div className="l-actions" style={{ marginTop: 34 }}>
               <Btn variant="1" onClick={() => go("formations")}>
                 Découvrir nos formations
               </Btn>
-              <Btn variant="2" onClick={() => go("contact")}>
-                Échanger sur votre projet
+              <Btn variant="2" onClick={() => go("conseil")}>
+                Conseil et projets IA
               </Btn>
             </div>
           </div>
@@ -3173,7 +3476,7 @@ function PageAccueil({ go }) {
           <SectionIntro
             eyebrow="Trois publics, trois réponses"
             titre="Le même sujet ne s’aborde pas de la même façon selon qui écoute."
-            texte="Un comité de direction cherche une direction. Une équipe métier cherche des gestes utiles dès lundi. Une équipe de transformation cherche des cas d’usage qui tiennent."
+            texte="Un comité de direction cherche une direction. Une équipe métier cherche des gestes utiles dès lundi. Un dirigeant cherche à savoir où investir, et ce qu’il peut écarter sans regret."
           />
           <div className="l-grid l-g3">
             {PUBLICS_HOME.map((p) => (
@@ -3239,35 +3542,17 @@ function PageAccueil({ go }) {
         </div>
       </section>
 
-      <section className="l-sec l-pale">
-        <div className="l-wrap">
-          <SectionIntro
-            eyebrow="Méthode"
-            titre="Quatre temps, toujours dans le même ordre."
-            texte="Cette séquence structure aussi bien une demi-journée d’acculturation qu’un accompagnement de plusieurs mois."
-            action={
-              <button className="l-btn l-btn-3" onClick={() => go("methode")}>
-                Notre méthode en détail
-              </button>
-            }
-          />
-          <div className="l-meth">
-            {METHODE.map((m) => (
-              <div className="l-meth-i" key={m.verbe}>
-                <p className="l-meth-v">{m.verbe}</p>
-                <p className="l-small" style={{ color: "var(--gris-1)" }}>{m.texte}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       <section className="l-sec">
         <div className="l-wrap">
           <SectionIntro
             eyebrow="Fondateurs"
             titre="La recherche rencontre le terrain."
-            texte="LucidIA est né d’une conviction : les entreprises n’ont pas besoin de promesses supplémentaires sur l’IA. Elles ont besoin de repères solides, d’expériences concrètes et d’interlocuteurs capables de relier les avancées technologiques à la réalité du travail."
+            texte="Deux chercheurs devenus consultants. La recherche apporte la distance et la méthode ; le conseil, la connaissance des contraintes réelles. Nos interventions tiennent parce qu’elles sont conçues avec les deux."
+            action={
+              <button className="l-btn l-btn-3" onClick={() => go("apropos")}>
+                Qui nous sommes
+              </button>
+            }
           />
           <Fondateurs />
         </div>
@@ -3381,7 +3666,13 @@ function LecteurMessage({ msg }) {
         <>
           <div className="l-msg-scene">
             {msg.photo() && (
-              <img className="l-msg-portrait" src={msg.photo()} alt={"Portrait de " + msg.auteur} />
+              <img
+                className="l-msg-portrait"
+                src={msg.photo()}
+                alt={"Portrait de " + msg.auteur}
+                width="800"
+                height="1000"
+              />
             )}
             <span className="l-msg-auteur">
               {msg.auteur} — {msg.role}
@@ -3453,7 +3744,14 @@ function Messages({ emplacement }) {
             aria-pressed={m.id === sel}
           >
             {m.photo() ? (
-              <img className="l-msg-vig" src={m.photo()} alt="" />
+              <img
+                className="l-msg-vig"
+                src={m.photoPetite ? m.photoPetite() : m.photo()}
+                alt=""
+                width="320"
+                height="400"
+                loading="lazy"
+              />
             ) : (
               <span className="l-msg-vig" />
             )}
@@ -3499,6 +3797,14 @@ function PageFormations({ go, filtreInitial }) {
             générative jusqu’au prototypage de cas d’usage. Chacun est ajusté après un entretien de
             cadrage.
           </p>
+          <div className="l-actions" style={{ marginTop: 32 }}>
+            <Btn variant="1" onClick={() => go("contact", { prefill: "Formation sur mesure" })}>
+              Échanger sur votre projet
+            </Btn>
+            <Btn variant="2" onClick={() => go("demonstrations")}>
+              Voir des cas d’usage en action
+            </Btn>
+          </div>
         </div>
       </section>
 
@@ -3579,6 +3885,64 @@ function PageFormations({ go, filtreInitial }) {
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Contenu repris de l'ancienne page « Notre méthode » : il décrit la
+          conduite d'une formation, sa place est donc ici. */}
+      <section className="l-sec">
+        <div className="l-wrap">
+          <SectionIntro
+            eyebrow="Notre façon de travailler"
+            titre="Ce qui fait la différence n’est pas le contenu, c’est le chemin."
+            texte="Les notions sur l’IA générative sont largement disponibles. Ce qui manque, c’est le passage de la notion au geste professionnel. Quatre temps, toujours dans le même ordre, qu’il s’agisse d’une demi-journée ou d’un parcours complet."
+          />
+          <div className="l-meth">
+            {METHODE.map((m) => (
+              <div className="l-meth-i" key={m.verbe}>
+                <p className="l-meth-v">{m.verbe}</p>
+                <p className="l-small" style={{ color: "var(--gris-1)" }}>{m.texte}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="l-sec l-pale">
+        <div className="l-wrap">
+          <SectionIntro
+            eyebrow="La différence LucidIA"
+            titre="Huit principes que nous appliquons sans exception."
+            texte="Ils sont exigeants pour nous : chacun demande du travail avant, pendant et après l’intervention. Sélectionnez un principe pour voir ce qu’il donne en pratique."
+          />
+          <Principes />
+        </div>
+      </section>
+
+      <section className="l-sec">
+        <div className="l-wrap">
+          <SectionIntro
+            eyebrow="Déroulé"
+            titre="Une intervention ne se limite jamais au temps passé dans la salle."
+            texte="Le travail de préparation et de suivi représente une part importante de la valeur produite."
+          />
+          <div className="l-frise">
+            {FRISE.map((t) => (
+              <div className="l-frise-i" key={t.temps}>
+                <p className="l-frise-t">{t.temps}</p>
+                <div className="l-frise-line" />
+                <Liste items={t.points} style={{ marginTop: 0 }} />
+              </div>
+            ))}
+          </div>
+          <div className="l-note" style={{ marginTop: 40 }}>
+            <p className="l-small">
+              Vous cherchez plutôt à cadrer un projet qu’à former vos équipes ?{" "}
+              <button className="l-btn l-btn-3" onClick={() => go("conseil")}>
+                Voir le conseil et les projets
+              </button>
+            </p>
           </div>
         </div>
       </section>
@@ -3807,27 +4171,79 @@ function PageFiche({ go, id }) {
   );
 }
 
-/* ─────────── PAGE : ACCOMPAGNEMENT ─────────── */
-function PageAccompagnement({ go }) {
+/* ─────────── PAGE : CONSEIL & PROJETS IA ─────────── */
+/* La page s'ouvre sur les situations que rencontrent les entreprises, pas sur
+   notre façon de travailler. Chaque prestation se mène seule : rien n'oblige
+   à passer par une formation au préalable. */
+function PageConseil({ go }) {
   const [ouvert, setOuvert] = useState("diagnostic");
+  const prestations = useRef(null);
+
+  /* Une situation cliquée déplie la prestation correspondante et amène le
+     lecteur dessus : il n'a pas à chercher le lien entre les deux. */
+  const allerVers = (id) => {
+    setOuvert(id);
+    if (prestations.current)
+      prestations.current.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   return (
     <>
-      <section className="l-sec" style={{ paddingTop: 132 }}>
+      <section className="l-sec" style={{ paddingTop: 132, paddingBottom: 40 }}>
         <div className="l-wrap">
-          <p className="l-eyebrow">Accompagnement IA</p>
-          <h1 className="l-d1" style={{ margin: "16px 0 22px", maxWidth: "22ch" }}>
-            Après la compréhension vient le travail de tri.
+          <p className="l-eyebrow">Conseil &amp; projets IA</p>
+          <h1 className="l-d1" style={{ margin: "16px 0 22px", maxWidth: "20ch" }}>
+            Savoir où vous en êtes, décider quoi engager, et le faire tenir.
           </h1>
           <p className="l-lede">
-            Une fois les équipes formées, les idées d’usages affluent. L’accompagnement sert à
-            distinguer celles qui créeront de la valeur de celles qui coûteront du temps, puis à
-            installer les premières dans les pratiques.
+            Nous conduisons vos projets d’intelligence artificielle du diagnostic jusqu’aux usages
+            installés. Quatre prestations, qui se prennent ensemble ou séparément, et qui ne
+            supposent aucune formation préalable.
           </p>
+          <div className="l-actions" style={{ marginTop: 32 }}>
+            <Btn
+              variant="1"
+              onClick={() => go("contact", { prefill: "Diagnostic des pratiques et des besoins" })}
+            >
+              Échanger sur votre projet
+            </Btn>
+            <Btn variant="2" onClick={() => go("demonstrations")}>
+              Voir des cas d’usage en action
+            </Btn>
+          </div>
         </div>
       </section>
 
-      <section className="l-sec-tight" style={{ paddingTop: 0 }}>
+      {/* Les situations d'entrée : le lecteur se reconnaît avant d'entendre
+          parler de prestations. */}
+      <section className="l-sec-tight l-pale">
         <div className="l-wrap">
+          <SectionIntro
+            eyebrow="Le point de départ"
+            titre="Vous vous reconnaissez sans doute dans l’une de ces situations."
+            texte="Ce sont celles qui reviennent le plus souvent dans nos échanges avec des dirigeants de TPE, PME et ETI. Chacune appelle un travail différent : sélectionnez celle qui vous concerne."
+          />
+          <div className="l-grid l-g3">
+            {PROBLEMES.map((pb) => (
+              <article className="l-pub" key={pb.titre}>
+                <h3 className="l-d4" style={{ lineHeight: 1.3 }}>{pb.titre}</h3>
+                <p className="l-small" style={{ color: "var(--gris-1)" }}>{pb.texte}</p>
+                <button className="l-btn l-btn-3" onClick={() => allerVers(pb.cible)}>
+                  Ce que nous faisons →
+                </button>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="l-sec-tight" ref={prestations} style={{ scrollMarginTop: 84 }}>
+        <div className="l-wrap">
+          <SectionIntro
+            eyebrow="Nos prestations"
+            titre="Quatre missions, commandées ensemble ou séparément."
+            texte="Chacune produit des livrables écrits et se suffit à elle-même. Beaucoup d’entreprises commencent par le diagnostic et s’arrêtent là : c’est un résultat légitime."
+          />
           {ACCOMPAGNEMENT.map((o, i) => (
             <article key={o.id} style={{ borderTop: "1px solid var(--ligne)", padding: "34px 0" }}>
               <div className="l-grid l-g2" style={{ alignItems: "start", gap: 40 }}>
@@ -3919,89 +4335,76 @@ function PageAccompagnement({ go }) {
         </div>
       </section>
 
-      <section className="l-sec">
-        <div className="l-wrap l-grid l-g2" style={{ alignItems: "center" }}>
-          <h2 className="l-d2">
-            L’accompagnement fonctionne mieux lorsque les équipes ont déjà été formées.
-          </h2>
-          <div>
-            <p className="l-txt">
-              Une équipe qui a manipulé ces outils sait décrire ce qu’elle en attend. Nous
-              recommandons donc souvent de commencer par une acculturation courte, puis
-              d’enchaîner sur le diagnostic.
-            </p>
-            <div className="l-actions" style={{ marginTop: 26 }}>
-              <Btn variant="1" onClick={() => go("formations")}>
-                Découvrir nos formations
-              </Btn>
-              <Btn variant="2" onClick={() => go("contact", { prefill: "Diagnostic des pratiques et des besoins" })}>
-                Échanger sur votre projet IA
-              </Btn>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <CtaFinal go={go} />
-    </>
-  );
-}
-
-/* ─────────── PAGE : NOTRE MÉTHODE ─────────── */
-function PageMethode({ go }) {
-  return (
-    <>
-      <section className="l-sec" style={{ paddingTop: 132 }}>
-        <div className="l-wrap">
-          <p className="l-eyebrow">Notre méthode</p>
-          <h1 className="l-d1" style={{ margin: "16px 0 22px", maxWidth: "22ch" }}>
-            Ce qui fait la différence n’est pas le contenu, c’est le chemin.
-          </h1>
-          <p className="l-lede">
-            Les notions sur l’IA générative sont largement disponibles. Ce qui manque, c’est le
-            passage de la notion au geste professionnel. Toute notre méthode tient dans ce passage.
-          </p>
-        </div>
-      </section>
-
-      <section className="l-sec-tight" style={{ paddingTop: 0 }}>
-        <div className="l-wrap l-meth">
-          {METHODE.map((m) => (
-            <div className="l-meth-i" key={m.verbe}>
-              <p className="l-meth-v">{m.verbe}</p>
-              <p className="l-small" style={{ color: "var(--gris-1)" }}>{m.texte}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="l-sec l-pale">
-        <div className="l-wrap">
-          <SectionIntro
-            eyebrow="La différence LucidIA"
-            titre="Huit principes que nous appliquons sans exception."
-            texte="Ils sont exigeants pour nous : chacun demande du travail avant, pendant et après l’intervention. Sélectionnez un principe pour voir ce qu’il donne en pratique."
-          />
-          <Principes />
-        </div>
-      </section>
-
+      {/* Aperçu des démonstrations : la page d'offre montre avant d'affirmer. */}
       <section className="l-sec">
         <div className="l-wrap">
           <SectionIntro
-            eyebrow="Déroulé"
-            titre="Une intervention ne se limite jamais au temps passé dans la salle."
-            texte="Le travail de préparation et de suivi représente une part importante de la valeur produite."
+            eyebrow="Voir plutôt que croire"
+            titre="Six cas d’usage joués étape par étape."
+            texte="Avant de cadrer un chantier, il est utile de voir précisément ce que ces systèmes font, ce qu’ils produisent et où le contrôle humain intervient. Six situations de travail, une par fonction."
+            action={
+              <button className="l-btn l-btn-3" onClick={() => go("demonstrations")}>
+                Voir les démonstrations
+              </button>
+            }
           />
-          <div className="l-frise">
-            {FRISE.map((t) => (
-              <div className="l-frise-i" key={t.temps}>
-                <p className="l-frise-t">{t.temps}</p>
-                <div className="l-frise-line" />
-                <Liste items={t.points} style={{ marginTop: 0 }} />
-              </div>
+          <div className="l-grid l-g3">
+            {DEMOS.slice(0, 3).map((d) => (
+              <button
+                className="l-pub"
+                key={d.id}
+                style={{ textAlign: "left" }}
+                onClick={() => go("demonstrations", { id: d.id })}
+              >
+                <span className="l-demo-i-f">{d.fonction}</span>
+                <span className="l-d4">{d.titre}</span>
+                <span className="l-small" style={{ color: "var(--gris-1)" }}>{d.promesse}</span>
+              </button>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Deux offres à parité : ni l'une ni l'autre n'est un préalable. */}
+      <section className="l-sec l-dark">
+        <div className="l-wrap">
+          <h2 className="l-d2" style={{ maxWidth: "24ch", marginBottom: 18 }}>
+            Deux offres distinctes, qui se commandent séparément.
+          </h2>
+          <p className="l-lede" style={{ marginBottom: 44 }}>
+            Certaines entreprises nous confient un diagnostic sans jamais nous demander une
+            formation. D’autres forment leurs équipes et conduisent la suite elles-mêmes. Les deux
+            cas sont fréquents et aucun n’est un préalable à l’autre.
+          </p>
+          <div className="l-grid l-g2">
+            <div className="l-pub">
+              <h3 className="l-d3">Conseil &amp; projets</h3>
+              <p>
+                Vous devez décider quoi faire de l’IA chez vous : savoir ce qui se pratique déjà,
+                trancher entre les usages possibles, engager un chantier et le faire tenir.
+              </p>
+              <Btn
+                variant="2"
+                onClick={() => go("contact", { prefill: "Diagnostic des pratiques et des besoins" })}
+              >
+                Parler de votre projet
+              </Btn>
+            </div>
+            <div className="l-pub">
+              <h3 className="l-d3">Formations</h3>
+              <p>
+                Vous voulez que vos dirigeants ou vos équipes sachent utiliser ces outils avec
+                méthode et discernement, sur leurs propres dossiers.
+              </p>
+              <Btn variant="2" onClick={() => go("formations")}>
+                Voir le catalogue
+              </Btn>
+            </div>
+          </div>
+          <p className="l-small" style={{ marginTop: 26 }}>
+            Lorsque les deux se combinent, nous le disons — et nous le disons aussi quand ce n’est
+            pas nécessaire.
+          </p>
         </div>
       </section>
 
@@ -4116,12 +4519,52 @@ function PageRessources({ go }) {
             Des repères écrits, à lire avant de décider.
           </h1>
           <p className="l-lede">
-            Articles et guides destinés aux dirigeants et aux responsables qui doivent trancher
-            sans être spécialistes du sujet. Les premiers textes sont en cours de rédaction.
+            Ce que nous publions et rendons librement accessible : la mini-revue{" "}
+            {REVUE.nom}, et, à venir, des repères écrits pour les dirigeants et les responsables
+            qui doivent trancher sans être spécialistes du sujet.
           </p>
         </div>
       </section>
 
+      {/* La mini-revue est la seule ressource réellement publiée : elle ouvre
+          la page, avant les emplacements éditoriaux encore vides. */}
+      <section className="l-sec-tight" style={{ paddingTop: 0 }}>
+        <div className="l-wrap">
+          <div className="l-revue-une">
+            <div className="l-une-cadre">
+              <Couverture
+                num={REVUE_UNE}
+                taille="(max-width: 860px) 280px, 360px"
+                onClick={() => go("a-deux-voix")}
+              />
+            </div>
+            <div>
+              <p className="l-eyebrow">{REVUE.nom} — {REVUE.descripteur}</p>
+              <h2 className="l-d2" style={{ margin: "14px 0 18px", maxWidth: "18ch" }}>
+                {REVUE_UNE.titre}
+              </h2>
+              <p className="l-revue-accroche">{REVUE_UNE.accroche}</p>
+              <p className="l-small" style={{ marginTop: 20, color: "var(--gris-1)" }}>
+                {REVUE.positionnement}
+              </p>
+              <div className="l-actions" style={{ marginTop: 26 }}>
+                <Btn variant="1" onClick={() => go("a-deux-voix")}>
+                  Découvrir la revue
+                </Btn>
+                <Btn variant="2" href={REVUE_UNE.pdf} download={REVUE_UNE.pdfNom}>
+                  Télécharger le PDF
+                </Btn>
+              </div>
+              <p className="l-small" style={{ marginTop: 14 }}>
+                {REVUE_UNE.numero} — {REVUE_UNE.date} · {REVUE_UNE.lecture} de lecture · PDF{" "}
+                {REVUE_UNE.pdfPoids}
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {ARTICLES_PUBLIES && (
       <section className="l-sec-tight" style={{ paddingTop: 0 }}>
         <div className="l-wrap">
           <div className="l-grid l-g3">
@@ -4136,15 +4579,11 @@ function PageRessources({ go }) {
               </article>
             ))}
           </div>
-          <div className="l-note" style={{ marginTop: 40 }}>
-            <p className="l-small">
-              Ces six cartes sont des emplacements éditoriaux. Les contenus restent à écrire : nous
-              ne publions ni statistique ni source que nous n’avons pas vérifiée.
-            </p>
-          </div>
         </div>
       </section>
+      )}
 
+      {VEILLE_OUVERTE && (
       <section className="l-sec l-pale">
         <div className="l-wrap l-grid l-g2" style={{ alignItems: "center" }}>
           <div>
@@ -4173,8 +4612,439 @@ function PageRessources({ go }) {
           </div>
         </div>
       </section>
+      )}
+
+      {/* Tant que les articles ne sont pas écrits, la page annonce ce qui
+          existe réellement plutôt que ce qui viendra. */}
+      <section className="l-sec-tight" style={{ paddingTop: 0 }}>
+        <div className="l-wrap">
+          <div className="l-note">
+            <p className="l-small">
+              D’autres formats sont en préparation : fiches de repères, comparatifs d’outils,
+              retours d’intervention. Nous ne publions ni statistique ni source que nous n’avons
+              pas vérifiée, ce qui prend du temps.{" "}
+              <button
+                className="l-btn l-btn-3"
+                onClick={() => go("contact", { prefill: "Autre sujet" })}
+              >
+                Être prévenu des prochaines publications
+              </button>
+            </p>
+          </div>
+        </div>
+      </section>
 
       <CtaFinal go={go} />
+    </>
+  );
+}
+
+/* ─────────── MINI-REVUE : COUVERTURE ───────────
+   Une seule image pour deux tailles d'affichage : le navigateur choisit
+   selon la largeur réelle du bloc, ce qui évite de transférer 84 Ko pour
+   une vignette de téléphone. */
+
+function Couverture({ num, taille = "(max-width: 860px) 320px, 430px", onClick, priorite }) {
+  const img = (
+    <img
+      src={num.couverture}
+      srcSet={num.couverturePetite + " 480w, " + num.couverture + " 960w"}
+      sizes={taille}
+      alt={num.couvertureAlt}
+      width="960"
+      height="1359"
+      loading={priorite ? undefined : "lazy"}
+      decoding="async"
+    />
+  );
+  if (!onClick) return <span className="l-une">{img}</span>;
+  return (
+    <button className="l-une" onClick={onClick} aria-label={"Lire le numéro " + num.rang + " — " + num.titre}>
+      {img}
+    </button>
+  );
+}
+
+/* Ligne d'un numéro dans la liste : publié, elle mène à sa page ; à
+   paraître, elle reste inerte et le dit. */
+function LigneNumero({ num, go }) {
+  const corps = (
+    <>
+      {num.publie ? (
+        <img
+          src={num.couverturePetite}
+          alt=""
+          width="480"
+          height="680"
+          loading="lazy"
+          decoding="async"
+        />
+      ) : (
+        <span className="l-num-vig" aria-hidden="true">
+          <span>{num.rang}</span>
+        </span>
+      )}
+      <span className="l-num-corps">
+        <span className="l-revue-num">
+          <b>{num.numero}</b>
+          <i aria-hidden="true" />
+          {num.date}
+          {num.publie && (
+            <span className="l-num-plus">
+              <i aria-hidden="true" />
+              {num.lecture} de lecture
+              <i aria-hidden="true" />
+              {num.pages} pages
+            </span>
+          )}
+        </span>
+        <span className="l-num-t">{num.titre}</span>
+        <span className="l-small" style={{ color: "var(--gris-1)" }}>
+          {num.publie ? num.accroche : num.resume}
+        </span>
+      </span>
+      {num.publie && (
+        <span className="l-num-fin">
+          <span className="l-btn l-btn-3" style={{ borderBottom: 0 }}>
+            Lire le numéro →
+          </span>
+        </span>
+      )}
+    </>
+  );
+  if (!num.publie)
+    return (
+      <div className="l-num l-num-a-venir">
+        {corps}
+      </div>
+    );
+  return (
+    <button className="l-num" onClick={() => go("a-deux-voix", { id: num.id })}>
+      {corps}
+    </button>
+  );
+}
+
+/* ─────────── PAGE DE LA RUBRIQUE « À DEUX VOIX » ─────────── */
+
+function PageADeuxVoix({ go }) {
+  const ref = useReveal();
+  const une = NUMEROS.find((n) => n.publie);
+
+  return (
+    <>
+      <section className="l-sec" style={{ paddingTop: 132 }} ref={ref}>
+        <div className="l-wrap">
+          <div className="l-revue-une">
+            <div className="l-une-cadre">
+              <Couverture
+                num={une}
+                priorite
+                onClick={() => go("a-deux-voix", { id: une.id })}
+              />
+            </div>
+            <div>
+              <p className="l-eyebrow">{REVUE.descripteur}</p>
+              <h1 className="l-d1" style={{ margin: "14px 0 22px", maxWidth: "12ch" }}>
+                {REVUE.nom}
+              </h1>
+              <p className="l-lede">{REVUE.positionnement}</p>
+              <div className="l-actions" style={{ marginTop: 30 }}>
+                <Btn
+                  variant="1"
+                  onClick={() => go("a-deux-voix", { id: une.id })}
+                >
+                  Lire le numéro {une.rang}
+                </Btn>
+                <Btn variant="2" href={une.pdf} download={une.pdfNom}>
+                  Télécharger le PDF
+                </Btn>
+              </div>
+              <p className="l-small" style={{ marginTop: 14 }}>
+                {une.numero} — {une.date} · {une.pages} pages · PDF {une.pdfPoids}
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="l-sec-tight l-pale">
+        <div className="l-wrap">
+          <SectionIntro
+            eyebrow="Le principe"
+            titre="Deux regards sur un même sujet, à chaque numéro."
+            texte="Une revue courte, exigeante et concrète. Chaque édition prend une question que les dirigeants nous posent vraiment, la confronte aux travaux disponibles, puis la ramène à ce qui se décide lundi matin. Rien n’y est publié sans source vérifiée."
+          />
+          <div className="l-grid l-g3">
+            <article className="l-art">
+              <span className="l-badge">Comprendre</span>
+              <h2 className="l-d4">Ce que disent réellement les études</h2>
+              <p className="l-small" style={{ color: "var(--gris-1)" }}>
+                Les publications des grands cabinets, traduites en français courant, avec la
+                méthode et l’échantillon toujours indiqués.
+              </p>
+            </article>
+            <article className="l-art">
+              <span className="l-badge">Croiser</span>
+              <h2 className="l-d4">Deux lectures qui ne se recouvrent pas</h2>
+              <p className="l-small" style={{ color: "var(--gris-1)" }}>
+                L’organisation et la stratégie d’un côté, les données et les usages métiers de
+                l’autre. Les désaccords sont écrits, pas lissés.
+              </p>
+            </article>
+            <article className="l-art">
+              <span className="l-badge">Agir</span>
+              <h2 className="l-d4">Ce que nous ferions à votre place</h2>
+              <p className="l-small" style={{ color: "var(--gris-1)" }}>
+                Une grille, un diagnostic ou une série d’actions applicables sans lancer de grand
+                projet ni acheter d’outil.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section className="l-sec">
+        <div className="l-wrap">
+          <SectionIntro
+            eyebrow="Les deux voix"
+            titre="Deux parcours, une même exigence."
+            texte="Nous sommes tous deux chercheurs et consultants. C’est ce double pied — le laboratoire et le terrain — qui donne à la revue son angle : ni veille technologique, ni discours de fournisseur."
+          />
+          <Fondateurs />
+        </div>
+      </section>
+
+      <section className="l-sec l-pale">
+        <div className="l-wrap">
+          <SectionIntro
+            eyebrow="Les numéros"
+            titre="Tous les numéros parus."
+            texte="Chaque numéro se lit en ligne et se télécharge en PDF, librement et sans inscription."
+          />
+          <div className="l-nums">
+            {NUMEROS.map((n) => (
+              <LigneNumero key={n.id} num={n} go={go} />
+            ))}
+          </div>
+          <div className="l-note" style={{ marginTop: 34 }}>
+            <p className="l-small">
+              Vous souhaitez recevoir les prochains numéros dès leur parution ?{" "}
+              <button
+                className="l-btn l-btn-3"
+                onClick={() => go("contact", { prefill: "Autre sujet" })}
+              >
+                Écrivez-nous
+              </button>
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <CtaFinal go={go} />
+    </>
+  );
+}
+
+/* ─────────── PAGE D'UN NUMÉRO ─────────── */
+
+function PageNumero({ go, id }) {
+  const ref = useReveal();
+  const num = NUMEROS.find((n) => n.id === id && n.publie);
+
+  /* Adresse inconnue ou numéro non paru : on le dit, sans page d'erreur. */
+  if (!num)
+    return (
+      <section className="l-sec" style={{ paddingTop: 132 }}>
+        <div className="l-wrap">
+          <p className="l-eyebrow">{REVUE.nom}</p>
+          <h1 className="l-d2" style={{ margin: "16px 0 20px" }}>
+            Ce numéro n’est pas encore paru.
+          </h1>
+          <p className="l-txt">
+            Retrouvez les numéros disponibles sur la page de la revue.
+          </p>
+          <div className="l-actions" style={{ marginTop: 26 }}>
+            <Btn variant="1" onClick={() => go("a-deux-voix")}>
+              Voir la revue
+            </Btn>
+          </div>
+        </div>
+      </section>
+    );
+
+  return (
+    <>
+      <section className="l-sec" style={{ paddingTop: 132 }} ref={ref}>
+        <div className="l-wrap">
+          <button className="l-back" onClick={() => go("a-deux-voix")}>
+            ← {REVUE.nom}
+          </button>
+          <div className="l-revue-une" style={{ marginTop: 34 }}>
+            <div className="l-une-cadre">
+              <Couverture num={num} priorite />
+            </div>
+            <div>
+              <p className="l-revue-num">
+                <b>{num.numero}</b>
+                <i aria-hidden="true" />
+                {num.date}
+                <i aria-hidden="true" />
+                {num.lecture} de lecture
+                <i aria-hidden="true" />
+                {num.pages} pages
+              </p>
+              <h1 className="l-d1" style={{ margin: "14px 0 24px", maxWidth: "14ch" }}>
+                {num.titre}
+              </h1>
+              <p className="l-revue-accroche">{num.accroche}</p>
+              <p className="l-txt" style={{ marginTop: 24, color: "var(--gris-1)" }}>
+                {num.resume}
+              </p>
+              <div className="l-actions" style={{ marginTop: 30 }}>
+                <Btn variant="1" href={num.pdf} download={num.pdfNom}>
+                  Télécharger le PDF
+                </Btn>
+                <Btn variant="2" href={num.pdf} target="_blank" rel="noreferrer">
+                  Lire dans le navigateur
+                </Btn>
+              </div>
+              <p className="l-small" style={{ marginTop: 14 }}>
+                PDF {num.pdfPoids} · {num.pages} pages · lecture libre, sans inscription
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="l-sec-tight l-pale">
+        <div className="l-wrap">
+          <p className="l-eyebrow" style={{ marginBottom: 26 }}>
+            Quelques chiffres du numéro
+          </p>
+          <div className="l-chif">
+            {num.chiffres.map((c) => (
+              <div className="l-chif-i" key={c.valeur + c.source}>
+                <span className="l-chif-v">{c.valeur}</span>
+                <span style={{ color: "var(--gris-1)", fontSize: ".95rem" }}>{c.texte}</span>
+                <span className="l-chif-s">{c.source}</span>
+              </div>
+            ))}
+          </div>
+          <p className="l-small" style={{ marginTop: 18 }}>
+            Sources complètes en dernière page du numéro. Aucun chiffre n’est publié sans sa
+            méthode et son échantillon.
+          </p>
+        </div>
+      </section>
+
+      <section className="l-sec">
+        <div className="l-wrap l-grid l-g2" style={{ alignItems: "start", gap: 56 }}>
+          <div>
+            <p className="l-eyebrow">Au sommaire</p>
+            <h2 className="l-d2" style={{ margin: "14px 0 10px", maxWidth: "16ch" }}>
+              Ce que vous trouverez dans les six pages.
+            </h2>
+            <p className="l-small">
+              Format court, lisible d’une traite, conçu pour être transmis tel quel à un comité de
+              direction.
+            </p>
+          </div>
+          <div className="l-somm">
+            {num.rubriques.map((r) => (
+              <div className="l-somm-i" key={r.page}>
+                <span className="l-somm-p">P. {r.page}</span>
+                <span>
+                  <span className="l-d4" style={{ display: "block", marginBottom: 6 }}>
+                    {r.titre}
+                  </span>
+                  <span className="l-small" style={{ color: "var(--gris-1)" }}>{r.texte}</span>
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="l-sec l-pale">
+        <div className="l-wrap">
+          <SectionIntro
+            eyebrow="Nos deux regards"
+            titre="Sur ce sujet, nous ne disons pas tout à fait la même chose."
+            texte="C’est le principe de la revue : deux lectures assumées, posées côte à côte, que le lecteur arbitre lui-même."
+          />
+          <div className="l-voix">
+            {num.regards.map((r) => (
+              <article className="l-voix-i" key={r.auteur}>
+                <div className="l-voix-tete">
+                  <img
+                    src={r.photo}
+                    alt={"Portrait de " + r.auteur}
+                    width="320"
+                    height="400"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                  <div>
+                    <span className="l-voix-nom">{r.auteur}</span>
+                    <p className="l-small">{r.angle}</p>
+                  </div>
+                </div>
+                <h3 className="l-d3">{r.titre}</h3>
+                <p style={{ color: "var(--gris-1)" }}>{r.texte}</p>
+                <p className="l-voix-cit">« {r.citation} »</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="l-sec-tight">
+        <div className="l-wrap l-grid l-g2" style={{ alignItems: "start" }}>
+          <div>
+            <h2 className="l-d3" style={{ marginBottom: 14 }}>Sources du numéro</h2>
+            <Liste items={num.sources} />
+          </div>
+          <div>
+            <div className="l-note">
+              <p className="l-small">
+                Nous n’avons aucun accord commercial avec un éditeur de solution. Les études citées
+                sont publiques et référencées dans le PDF.
+              </p>
+            </div>
+            <div className="l-actions" style={{ marginTop: 26 }}>
+              <Btn variant="1" href={num.pdf} download={num.pdfNom}>
+                Télécharger le PDF ({num.pdfPoids})
+              </Btn>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Appel discret : la revue n'est pas une plaquette commerciale. */}
+      <section className="l-sec-tight l-dark">
+        <div className="l-wrap l-grid l-g2" style={{ alignItems: "center" }}>
+          <div>
+            <h2 className="l-d3" style={{ marginBottom: 12 }}>
+              Vous rencontrez ces questions dans votre organisation ?
+            </h2>
+            <p className="l-small">
+              Échangeons sur vos usages réels de l’IA. Trente minutes suffisent pour savoir par où
+              commencer.
+            </p>
+          </div>
+          <div className="l-actions" style={{ alignItems: "center" }}>
+            <Btn variant="2" onClick={() => go("contact", { prefill: "Autre sujet" })}>
+              Nous écrire
+            </Btn>
+            {SITE.calendly && (
+              <Btn variant="3" href={SITE.calendly} target="_blank" rel="noreferrer">
+                Réserver 30 minutes
+              </Btn>
+            )}
+          </div>
+        </div>
+      </section>
     </>
   );
 }
@@ -4970,10 +5840,17 @@ export default function SiteLucidIA() {
       : null;
     const demo =
       route.page === "demonstrations" && route.id ? DEMOS.find((x) => x.id === route.id) : null;
+    /* La revue vit sous /ressources : elle a ses propres titres. */
+    const revue = route.page === "a-deux-voix";
+    const numero = revue && route.id ? NUMEROS.find((x) => x.id === route.id && x.publie) : null;
     document.title = fiche
       ? fiche.titre + " — Formation IA en entreprise | LucidIA"
       : demo
       ? demo.titre + " — Démonstration " + demo.fonction + " | LucidIA"
+      : numero
+      ? numero.titre + " — " + REVUE.nom + " " + numero.numero + " | LucidIA"
+      : revue
+      ? REVUE.nom + " — " + REVUE.descripteur + " | LucidIA"
       : p.titre;
     let m = document.querySelector('meta[name="description"]');
     if (!m) {
@@ -4994,6 +5871,10 @@ export default function SiteLucidIA() {
         ? fiche.promesse + " Formation adaptée aux TPE, PME et ETI."
         : demo
         ? demo.promesse + " Démonstration commentée du cas d’usage, fonction " + demo.fonction + "."
+        : numero
+        ? numero.accroche + " " + REVUE.nom + ", " + numero.numero + " — " + numero.date + "."
+        : revue
+        ? REVUE.positionnement
         : p.meta
     );
   }, [route, canonique]);
@@ -5018,9 +5899,10 @@ export default function SiteLucidIA() {
       <PageFormations go={go} filtreInitial={route.filtre} />
     );
   else if (route.page === "demonstrations") vue = <PageDemos go={go} id={route.id} />;
-  else if (route.page === "accompagnement") vue = <PageAccompagnement go={go} />;
-  else if (route.page === "methode") vue = <PageMethode go={go} />;
+  else if (route.page === "conseil") vue = <PageConseil go={go} />;
   else if (route.page === "apropos") vue = <PageApropos go={go} />;
+  else if (route.page === "a-deux-voix")
+    vue = route.id ? <PageNumero go={go} id={route.id} /> : <PageADeuxVoix go={go} />;
   else if (route.page === "ressources") vue = <PageRessources go={go} />;
   else if (route.page === "contact")
     vue = (

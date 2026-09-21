@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://lucidia.fr/sitemap.xml
+Sitemap: https://lucidia-ia.netlify.app/sitemap.xml

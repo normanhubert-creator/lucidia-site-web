@@ -54,7 +54,7 @@ Chaque `git push` republiera le site automatiquement.
 
 ### Obligatoire
 
-1. **`src/LucidIA.jsx`, constante `DOMAINE`** — remplacez `https://lucidia.fr`
+1. **`src/LucidIA.jsx`, constante `DOMAINE`** — remplacez `https://lucidia-ia.netlify.app`
    par votre domaine réel. Cette valeur alimente les adresses canoniques et les
    données structurées.
 2. **Mêmes corrections dans `index.html`** (balises `canonical`, `og:url`,

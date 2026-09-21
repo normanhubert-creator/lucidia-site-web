@@ -12,3 +12,13 @@ source-archive/
 
 # Local Netlify folder
 .netlify
+
+# ── Dossiers de travail locaux — jamais publiés ──
+# Ils contiennent des données de prospection, des documents de travail et
+# les sources de la mini-revue. Rien de tout cela ne doit partir sur GitHub.
+Prospects/
+Divers/
+Mini-revue/
+
+# Réglages locaux de l'outil de développement
+.claude/

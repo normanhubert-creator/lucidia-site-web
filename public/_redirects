@@ -1,4 +1,24 @@
-# Toutes les adresses renvoient index.html : c'est ce qui permet à
+# Netlify lit ce fichier de haut en bas et s'arrête à la première règle qui
+# correspond. L'ordre est donc significatif : les règles précises doivent
+# rester AVANT la règle passe-partout, sans quoi elles ne seraient jamais
+# atteintes.
+
+# ── Anciennes adresses, conservées pour les liens déjà partagés ──
+# Le « ! » force la redirection même si un fichier du même nom existe.
+/accompagnement           /conseil       301!
+/methode                  /formations    301!
+/ressources/a-deux-voix   /a-deux-voix   301!
+
+# ── Pages pré-rendues ──
+# La ligne ci-dessous est remplacée à chaque construction par
+# scripts/prerender.mjs, qui y inscrit une règle par page pré-rendue.
+# Ces règles servent le HTML porteur des bonnes métadonnées de partage sans
+# dépendre de la façon dont l'hébergeur résout les adresses sans extension.
+# Ne pas supprimer ce repère.
+# @@PAGES_PRERENDUES@@
+
+# ── Règle générale ──
+# Toutes les autres adresses renvoient index.html : c'est ce qui permet à
 # /formations/prompting-professionnel de fonctionner en accès direct.
 # Fichier lu par Netlify et par Cloudflare Pages.
 /*    /index.html   200

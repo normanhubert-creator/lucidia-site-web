@@ -1,138 +1,143 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://lucidia.fr/</loc>
-    <lastmod>2026-09-15</lastmod>
+    <loc>https://lucidia-ia.netlify.app/</loc>
+    <lastmod>2026-09-21</lastmod>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://lucidia.fr/formations</loc>
-    <lastmod>2026-09-15</lastmod>
+    <loc>https://lucidia-ia.netlify.app/formations</loc>
+    <lastmod>2026-09-21</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lucidia.fr/accompagnement</loc>
-    <lastmod>2026-09-15</lastmod>
+    <loc>https://lucidia-ia.netlify.app/conseil</loc>
+    <lastmod>2026-09-21</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lucidia.fr/methode</loc>
-    <lastmod>2026-09-15</lastmod>
+    <loc>https://lucidia-ia.netlify.app/apropos</loc>
+    <lastmod>2026-09-21</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lucidia.fr/apropos</loc>
-    <lastmod>2026-09-15</lastmod>
+    <loc>https://lucidia-ia.netlify.app/demonstrations</loc>
+    <lastmod>2026-09-21</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lucidia.fr/demonstrations</loc>
-    <lastmod>2026-09-15</lastmod>
+    <loc>https://lucidia-ia.netlify.app/ressources</loc>
+    <lastmod>2026-09-21</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lucidia.fr/ressources</loc>
-    <lastmod>2026-09-15</lastmod>
+    <loc>https://lucidia-ia.netlify.app/a-deux-voix</loc>
+    <lastmod>2026-09-21</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lucidia.fr/contact</loc>
-    <lastmod>2026-09-15</lastmod>
+    <loc>https://lucidia-ia.netlify.app/a-deux-voix/ia-de-l-ombre</loc>
+    <lastmod>2026-09-21</lastmod>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://lucidia-ia.netlify.app/contact</loc>
+    <lastmod>2026-09-21</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://lucidia.fr/mentions</loc>
-    <lastmod>2026-09-15</lastmod>
+    <loc>https://lucidia-ia.netlify.app/mentions</loc>
+    <lastmod>2026-09-21</lastmod>
     <priority>0.4</priority>
   </url>
   <url>
-    <loc>https://lucidia.fr/formations/comprendre-ia-generative</loc>
-    <lastmod>2026-09-15</lastmod>
+    <loc>https://lucidia-ia.netlify.app/formations/comprendre-ia-generative</loc>
+    <lastmod>2026-09-21</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://lucidia.fr/formations/codir-piloter-entreprise</loc>
-    <lastmod>2026-09-15</lastmod>
+    <loc>https://lucidia-ia.netlify.app/formations/codir-piloter-entreprise</loc>
+    <lastmod>2026-09-21</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://lucidia.fr/formations/maitriser-assistants</loc>
-    <lastmod>2026-09-15</lastmod>
+    <loc>https://lucidia-ia.netlify.app/formations/maitriser-assistants</loc>
+    <lastmod>2026-09-21</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://lucidia.fr/formations/prompting-professionnel</loc>
-    <lastmod>2026-09-15</lastmod>
+    <loc>https://lucidia-ia.netlify.app/formations/prompting-professionnel</loc>
+    <lastmod>2026-09-21</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://lucidia.fr/formations/copilot-environnement-travail</loc>
-    <lastmod>2026-09-15</lastmod>
+    <loc>https://lucidia-ia.netlify.app/formations/copilot-environnement-travail</loc>
+    <lastmod>2026-09-21</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://lucidia.fr/formations/recherche-ia-connectees</loc>
-    <lastmod>2026-09-15</lastmod>
+    <loc>https://lucidia-ia.netlify.app/formations/recherche-ia-connectees</loc>
+    <lastmod>2026-09-21</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://lucidia.fr/formations/ia-finance</loc>
-    <lastmod>2026-09-15</lastmod>
+    <loc>https://lucidia-ia.netlify.app/formations/ia-finance</loc>
+    <lastmod>2026-09-21</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://lucidia.fr/formations/ia-ressources-humaines</loc>
-    <lastmod>2026-09-15</lastmod>
+    <loc>https://lucidia-ia.netlify.app/formations/ia-ressources-humaines</loc>
+    <lastmod>2026-09-21</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://lucidia.fr/formations/ia-marketing-communication</loc>
-    <lastmod>2026-09-15</lastmod>
+    <loc>https://lucidia-ia.netlify.app/formations/ia-marketing-communication</loc>
+    <lastmod>2026-09-21</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://lucidia.fr/formations/ia-equipes-commerciales</loc>
-    <lastmod>2026-09-15</lastmod>
+    <loc>https://lucidia-ia.netlify.app/formations/ia-equipes-commerciales</loc>
+    <lastmod>2026-09-21</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://lucidia.fr/formations/atelier-cas-usage</loc>
-    <lastmod>2026-09-15</lastmod>
+    <loc>https://lucidia-ia.netlify.app/formations/atelier-cas-usage</loc>
+    <lastmod>2026-09-21</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://lucidia.fr/formations/usages-responsables</loc>
-    <lastmod>2026-09-15</lastmod>
+    <loc>https://lucidia-ia.netlify.app/formations/usages-responsables</loc>
+    <lastmod>2026-09-21</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://lucidia.fr/demonstrations/finance-commentaire-gestion</loc>
-    <lastmod>2026-09-15</lastmod>
+    <loc>https://lucidia-ia.netlify.app/demonstrations/finance-commentaire-gestion</loc>
+    <lastmod>2026-09-21</lastmod>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://lucidia.fr/demonstrations/comptabilite-rapprochement</loc>
-    <lastmod>2026-09-15</lastmod>
+    <loc>https://lucidia-ia.netlify.app/demonstrations/comptabilite-rapprochement</loc>
+    <lastmod>2026-09-21</lastmod>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://lucidia.fr/demonstrations/controle-gestion-interrogation</loc>
-    <lastmod>2026-09-15</lastmod>
+    <loc>https://lucidia-ia.netlify.app/demonstrations/controle-gestion-interrogation</loc>
+    <lastmod>2026-09-21</lastmod>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://lucidia.fr/demonstrations/rh-questions-collaborateurs</loc>
-    <lastmod>2026-09-15</lastmod>
+    <loc>https://lucidia-ia.netlify.app/demonstrations/rh-questions-collaborateurs</loc>
+    <lastmod>2026-09-21</lastmod>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://lucidia.fr/demonstrations/marketing-declinaison</loc>
-    <lastmod>2026-09-15</lastmod>
+    <loc>https://lucidia-ia.netlify.app/demonstrations/marketing-declinaison</loc>
+    <lastmod>2026-09-21</lastmod>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://lucidia.fr/demonstrations/commercial-preparation</loc>
-    <lastmod>2026-09-15</lastmod>
+    <loc>https://lucidia-ia.netlify.app/demonstrations/commercial-preparation</loc>
+    <lastmod>2026-09-21</lastmod>
     <priority>0.6</priority>
   </url>
 </urlset>
